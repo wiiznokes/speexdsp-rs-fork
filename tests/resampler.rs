@@ -4,8 +4,8 @@ mod comparison {
     use interpolate_name::interpolate_test;
 
     use speexdsp::resampler as sys;
-    use speexdsp::resampler::native;
     use speexdsp::resampler::Resampler;
+    use speexdsp::resampler::native;
 
     use std::f32::consts::PI;
 

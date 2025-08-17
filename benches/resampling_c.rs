@@ -1,7 +1,7 @@
 #[cfg(feature = "sys")]
 extern crate speexdsp_sys;
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 #[cfg(feature = "sys")]
 use speexdsp_sys::resampler::*;
 
