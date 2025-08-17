@@ -15,7 +15,7 @@ exclude = ["speexdsp/doc/*", "speexdsp/html/*"]
 
 
 [features]
-default = ["vendored"]
+default = []
 vendored = []
 
 [build-dependencies]
