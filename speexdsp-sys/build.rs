@@ -36,6 +36,27 @@ fn main() {
         include_paths.push(PathBuf::from("speexdsp/include"));
         include_paths.push(PathBuf::from("speexdsp/libspeexdsp"));
 
+        // generate speexdsp_config_types.h.in manually to not depend on cmake
+        {
+            let template = std::fs::read_to_string(
+                "speexdsp/include/speex/speexdsp_config_types.h.in",
+            )
+            .unwrap();
+
+            let content = template
+                .replace("@INCLUDE_STDINT@", "#include <stdint.h>")
+                .replace("@SIZE16@", "int16_t")
+                .replace("@USIZE16@", "uint16_t")
+                .replace("@SIZE32@", "int32_t")
+                .replace("@USIZE32@", "uint32_t");
+
+            std::fs::write(
+                "speexdsp/include/speex/speexdsp_config_types.h",
+                content,
+            )
+            .unwrap();
+        }
+
         let mut cfg = cc::Build::new();
 
         let common_c_files = [
@@ -57,6 +78,8 @@ fn main() {
         }
 
         cfg.define("FLOATING_POINT", None);
+
+        // xxx: maybe we should use the .h files in win32 ?
 
         // necessary for windows for some reason
         cfg.define("EXPORT", "");
