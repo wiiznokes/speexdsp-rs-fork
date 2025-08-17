@@ -19,8 +19,9 @@ readme = "README.md"
 edition.workspace = true
 
 [features]
+default = ["sys"]
 sys = ["speexdsp-sys"]
-vendored-sys = ["speexdsp-sys/vendored"]
+vendored-sys = ["sys", "speexdsp-sys/vendored"]
 sse3 = ["speexdsp-resampler/sse3"]
 avx = ["speexdsp-resampler/avx"]
 dynnative = ["speexdsp-resampler/dynnative"]

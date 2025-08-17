@@ -59,7 +59,7 @@ mod sys {
 
     impl From<i32> for Error {
         fn from(v: i32) -> Error {
-            match v as u32 {
+            match v as _bindgen_ty_1 {
                 RESAMPLER_ERR_ALLOC_FAILED => Error::AllocFailed,
                 RESAMPLER_ERR_BAD_STATE => Error::BadState,
                 RESAMPLER_ERR_INVALID_ARG => Error::InvalidArg,
@@ -110,11 +110,7 @@ mod sys {
                     out_rate as u32,
                 )
             };
-            if ret != 0 {
-                Err(ret.into())
-            } else {
-                Ok(())
-            }
+            if ret != 0 { Err(ret.into()) } else { Ok(()) }
         }
 
         fn get_rate(&self) -> (usize, usize) {
@@ -183,11 +179,7 @@ mod sys {
             let ret = unsafe {
                 speex_resampler_set_quality(self.st, quality as i32)
             };
-            if ret != 0 {
-                Err(ret.into())
-            } else {
-                Ok(())
-            }
+            if ret != 0 { Err(ret.into()) } else { Ok(()) }
         }
 
         fn get_quality(&self) -> usize {
