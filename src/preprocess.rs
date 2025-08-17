@@ -178,12 +178,12 @@ mod sys {
             }
         }
 
-        pub fn set_denoise(&self, enable: bool) {
+        pub fn set_denoise(&mut self, enable: bool) {
             let mut value = if enable { 1 } else { 0 };
             speex_ctl_helper!(self.st, SPEEX_PREPROCESS_SET_DENOISE, value);
         }
 
-        pub fn set_noise_suppress(&self, mut value: i32) {
+        pub fn set_noise_suppress(&mut self, mut value: i32) {
             speex_ctl_helper!(
                 self.st,
                 SPEEX_PREPROCESS_SET_NOISE_SUPPRESS,
