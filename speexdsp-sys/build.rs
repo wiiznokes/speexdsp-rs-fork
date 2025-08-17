@@ -1,61 +1,78 @@
-extern crate autotools;
-extern crate bindgen;
-extern crate system_deps;
-
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::{env, fs};
+use std::env;
 
-fn format_write(builder: bindgen::Builder) -> String {
-    builder
-        .generate()
-        .unwrap()
-        .to_string()
-        .replace("/**", "/*")
-        .replace("/*!", "/*")
+/// Tries to use system speexdsp and emits necessary build script instructions.
+fn try_system_speexdsp() -> Result<pkg_config::Library, pkg_config::Error> {
+    let mut cfg = pkg_config::Config::new();
+
+    match cfg.atleast_version("1.2").probe("speexdsp") {
+        Ok(lib) => {
+            for include in &lib.include_paths {
+                println!("cargo:root={}", include.display());
+            }
+            Ok(lib)
+        }
+        Err(e) => {
+            println!("cargo:warning=failed to probe system speexdsp: {e}");
+            Err(e)
+        }
+    }
 }
 
 fn main() {
     let vendored = env::var("CARGO_FEATURE_VENDORED").is_ok();
 
-    let mut headers: Vec<PathBuf> = Vec::new();
+    let common_c_files = [
+        "buffer.c",
+        "fftwrap.c",
+        "filterbank.c",
+        "jitter.c",
+        "kiss_fft.c",
+        "kiss_fftr.c",
+        "mdf.c",
+        "preprocess.c",
+        "resample.c",
+        "scal.c",
+        "smallft.c",
+    ];
+
+    let dst = PathBuf::from(env::var_os("OUT_DIR").unwrap());
+
+    let mut include_paths: Vec<PathBuf> = Vec::new();
 
     if !vendored {
-        let libs = system_deps::Config::new()
-            .add_build_internal("speexdsp", |lib, version| {
-                // TODO: decide how to fetch the source
-                let dst = autotools::build("speexdsp");
-                system_deps::Library::from_internal_pkg_config(
-                    dst, lib, version,
-                )
-            })
-            .probe()
-            .unwrap();
+        let lib = try_system_speexdsp().unwrap();
 
-        headers = libs.get_by_name("speexdsp").unwrap().include_paths.clone();
+        include_paths = lib.include_paths.clone();
     } else {
-        let dst = PathBuf::from(env::var_os("OUT_DIR").unwrap());
-
-        let include = Path::new("speexdsp/include");
-
-        add_h_files(&mut headers, &include);
+        include_paths.push(PathBuf::from("speexdsp/include"));
+        include_paths.push(PathBuf::from("speexdsp/libspeexdsp"));
 
         let mut cfg = cc::Build::new();
 
-        add_c_files(&mut cfg, "speexdsp/libspeexdsp");
+        for f in common_c_files {
+            cfg.file(Path::new("speexdsp/libspeexdsp").join(f));
+        }
 
-        cfg.define("FLOATING_POINT", None).define("EXPORT", "");
+        cfg.define("FLOATING_POINT", None);
+
+        // necessary for windows for some reason
+        cfg.define("EXPORT", "");
+
+        // most portable implementation
         cfg.define("USE_SMALLFT", None);
 
-        cfg.include(include);
-        cfg.out_dir(dst.join("lib"));
+        for path in &include_paths {
+            cfg.include(path);
+        }
+
+        cfg.out_dir(dst.join("build"));
         cfg.warnings(false);
 
         cfg.compile("speexdsp");
     }
-
-    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
 
     for e in ["echo", "jitter", "preprocess", "resampler"].iter() {
         let mut builder = bindgen::builder()
@@ -63,51 +80,23 @@ fn main() {
             .layout_tests(false)
             .header(format!("data/{}.h", e));
 
-        for header in headers.iter() {
+        for header in include_paths.iter() {
             builder =
                 builder.clang_arg("-I").clang_arg(header.to_str().unwrap());
         }
 
+        let bindings = builder.generate().unwrap();
+
         // Manually fix the comment so rustdoc won't try to pick them
-        let s = format_write(builder);
+        let s = bindings
+            .to_string()
+            .replace("/**", "/*")
+            .replace("/*!", "/*");
 
         let lib = format!("{}.rs", e);
 
-        let mut file = File::create(out_path.join(lib)).unwrap();
+        let mut file = File::create(dst.join(lib)).unwrap();
 
-        let _ = file.write(s.as_bytes());
-    }
-}
-
-fn add_c_files(build: &mut cc::Build, path: impl AsRef<Path>) {
-    let path = path.as_ref();
-    if !path.exists() {
-        panic!("Path {} does not exist", path.display());
-    }
-    // sort the C files to ensure a deterministic build for reproducible builds
-    let dir = path.read_dir().unwrap();
-    let mut paths = dir.collect::<std::io::Result<Vec<_>>>().unwrap();
-    paths.sort_by_key(|e| e.path());
-
-    for e in paths {
-        let path = e.path();
-        if e.file_type().unwrap().is_dir() {
-            // skip dirs for now
-        } else if path.extension().and_then(|s| s.to_str()) == Some("c") {
-            build.file(&path);
-        }
-    }
-}
-
-fn add_h_files(headers: &mut Vec<PathBuf>, path: &Path) {
-    for e in path.read_dir().unwrap() {
-        let e = e.unwrap();
-        let path = e.path();
-
-        if e.file_type().unwrap().is_dir() {
-            add_h_files(headers, &path)
-        } else if path.extension().and_then(|s| s.to_str()) == Some("h") {
-            headers.push(path);
-        }
+        file.write(s.as_bytes()).unwrap();
     }
 }

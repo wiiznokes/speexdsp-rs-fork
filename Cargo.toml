@@ -1,3 +1,10 @@
+[workspace]
+members = ["speexdsp-sys", "resampler", "fft"]
+
+[workspace.package]
+edition = "2024"
+
+
 [package]
 name = "speexdsp"
 version = "0.1.1"
@@ -9,13 +16,14 @@ keywords = ["audio", "resampler"]
 categories = ["api-bindings"]
 license = "MIT"
 readme = "README.md"
-edition = "2018"
+edition.workspace = true
 
 [features]
 sys = ["speexdsp-sys"]
-sse3 = [ "speexdsp-resampler/sse3" ]
-avx = [ "speexdsp-resampler/avx" ]
-dynnative = [ "speexdsp-resampler/dynnative" ]
+vendored-sys = ["speexdsp-sys/vendored"]
+sse3 = ["speexdsp-resampler/sse3"]
+avx = ["speexdsp-resampler/avx"]
+dynnative = ["speexdsp-resampler/dynnative"]
 
 [dev-dependencies]
 assert_approx_eq = "1.1.0"
@@ -28,8 +36,6 @@ criterion = "0.3"
 speexdsp-sys = { version = "0.1.1", path = "speexdsp-sys", optional = true }
 speexdsp-resampler = { version = "0.1", path = "resampler" }
 
-[workspace]
-members = ["speexdsp-sys", "resampler", "fft"]
 
 [[bench]]
 name = "resampling_c"
