@@ -98,6 +98,19 @@ mod sys {
         st: *mut SpeexPreprocessState,
     }
 
+    macro_rules! speex_ctl_helper {
+        ($st:expr, $req:expr, $v:expr) => {
+            let ret = unsafe {
+                speex_preprocess_ctl(
+                    $st,
+                    $req as std::os::raw::c_int,
+                    &mut $v as *mut i32 as *mut c_void,
+                )
+            };
+            debug_assert!(ret == 0);
+        };
+    }
+
     impl SpeexPreprocess {
         pub fn new(
             frame_size: usize,
@@ -163,6 +176,19 @@ mod sys {
             } else {
                 Ok(())
             }
+        }
+
+        pub fn set_denoise(&mut self, enable: bool) {
+            let mut value = if enable { 1 } else { 0 };
+            speex_ctl_helper!(self.st, SPEEX_PREPROCESS_SET_DENOISE, value);
+        }
+
+        pub fn set_noise_suppress(&mut self, mut value: i32) {
+            speex_ctl_helper!(
+                self.st,
+                SPEEX_PREPROCESS_SET_NOISE_SUPPRESS,
+                value
+            );
         }
     }
 
