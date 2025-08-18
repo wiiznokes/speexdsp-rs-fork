@@ -79,7 +79,7 @@ fn main() {
         cfg.define("FLOATING_POINT", None);
 
         // xxx: maybe we should use the .h files in win32 ?
-        
+
         // necessary for windows for some reason
         cfg.define("EXPORT", "");
         // most portable implementation
