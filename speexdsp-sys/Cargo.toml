@@ -10,10 +10,16 @@ homepage = "https://github.com/rust-av/speexdsp-rs"
 keywords = ["audio", "resampler"]
 categories = ["api-bindings"]
 
+exclude = ["speexdsp/doc/*", "speexdsp/html/*"]
+
+[features]
+vendored = []
+
 [build-dependencies]
 autotools = "0.2"
 system-deps = "6.0"
 bindgen = "0.59.2"
+cc = "1"
 
 [dev-dependencies]
 byteorder = "1.3"
