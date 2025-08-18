@@ -59,7 +59,7 @@ mod sys {
 
     impl From<i32> for Error {
         fn from(v: i32) -> Error {
-            match v as u32 {
+            match v as _bindgen_ty_1 {
                 RESAMPLER_ERR_ALLOC_FAILED => Error::AllocFailed,
                 RESAMPLER_ERR_BAD_STATE => Error::BadState,
                 RESAMPLER_ERR_INVALID_ARG => Error::InvalidArg,

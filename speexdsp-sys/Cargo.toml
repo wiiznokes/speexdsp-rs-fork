@@ -17,7 +17,7 @@ vendored = []
 
 [build-dependencies]
 pkg-config = "0.3"
-bindgen = "0.59.2"
+bindgen = "0.72"
 cc = "1"
 
 [dev-dependencies]
