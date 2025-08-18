@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use speexdsp::resampler::*;
 
 const PERIOD: f32 = 32f32;

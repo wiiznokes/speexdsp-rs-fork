@@ -110,11 +110,7 @@ mod sys {
                     out_rate as u32,
                 )
             };
-            if ret != 0 {
-                Err(ret.into())
-            } else {
-                Ok(())
-            }
+            if ret != 0 { Err(ret.into()) } else { Ok(()) }
         }
 
         fn get_rate(&self) -> (usize, usize) {
@@ -183,11 +179,7 @@ mod sys {
             let ret = unsafe {
                 speex_resampler_set_quality(self.st, quality as i32)
             };
-            if ret != 0 {
-                Err(ret.into())
-            } else {
-                Ok(())
-            }
+            if ret != 0 { Err(ret.into()) } else { Ok(()) }
         }
 
         fn get_quality(&self) -> usize {
