@@ -3,6 +3,24 @@ use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+/// Tries to use system speexdsp and emits necessary build script instructions.
+fn try_system_speexdsp() -> Result<pkg_config::Library, pkg_config::Error> {
+    let mut cfg = pkg_config::Config::new();
+
+    match cfg.atleast_version("1.2").probe("speexdsp") {
+        Ok(lib) => {
+            for include in &lib.include_paths {
+                println!("cargo:root={}", include.display());
+            }
+            Ok(lib)
+        }
+        Err(e) => {
+            println!("cargo:warning=failed to probe system speexdsp: {e}");
+            Err(e)
+        }
+    }
+}
+
 fn main() {
     let vendored = env::var("CARGO_FEATURE_VENDORED").is_ok();
 
@@ -11,19 +29,8 @@ fn main() {
     let mut include_paths: Vec<PathBuf> = Vec::new();
 
     if !vendored {
-        let libs = system_deps::Config::new()
-            .add_build_internal("speexdsp", |lib, version| {
-                // TODO: decide how to fetch the source
-                let dst = autotools::build("speexdsp");
-                system_deps::Library::from_internal_pkg_config(
-                    dst, lib, version,
-                )
-            })
-            .probe()
-            .unwrap();
-
-        include_paths =
-            libs.get_by_name("speexdsp").unwrap().include_paths.clone();
+        let lib = try_system_speexdsp().unwrap();
+        include_paths = lib.include_paths.clone();
     } else {
         include_paths.push(PathBuf::from("speexdsp/include"));
         include_paths.push(PathBuf::from("speexdsp/libspeexdsp"));
