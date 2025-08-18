@@ -9,6 +9,7 @@ readme = "../README.md"
 homepage = "https://github.com/rust-av/speexdsp-rs"
 keywords = ["audio", "resampler"]
 categories = ["api-bindings"]
+edition.workspace = true
 
 exclude = ["speexdsp/doc/*", "speexdsp/html/*"]
 
