@@ -2,9 +2,7 @@
 
 #[cfg(feature = "sys")]
 mod sys {
-    use crate::echo::SpeexEcho;
     use speexdsp_sys::preprocess::*;
-    use std::convert::From;
     use std::ffi::c_void;
     use std::fmt;
 
@@ -70,41 +68,30 @@ mod sys {
         }
     }
 
-    pub enum Variant {
-        U32(u32),
-        F32(f32),
-        Echo(SpeexEcho),
-    }
-
-    impl From<u32> for Variant {
-        fn from(item: u32) -> Self {
-            Variant::U32(item)
-        }
-    }
-
-    impl From<f32> for Variant {
-        fn from(item: f32) -> Self {
-            Variant::F32(item)
-        }
-    }
-
-    impl From<&SpeexEcho> for Variant {
-        fn from(item: &SpeexEcho) -> Self {
-            Variant::Echo(item.clone())
-        }
-    }
-
     pub struct SpeexPreprocess {
         st: *mut SpeexPreprocessState,
     }
 
-    macro_rules! speex_ctl_helper {
+    macro_rules! speex_ctl_helper_i32 {
         ($st:expr, $req:expr, $v:expr) => {
             let ret = unsafe {
                 speex_preprocess_ctl(
                     $st,
                     $req as std::os::raw::c_int,
                     &mut $v as *mut i32 as *mut c_void,
+                )
+            };
+            debug_assert!(ret == 0);
+        };
+    }
+
+    macro_rules! speex_ctl_helper_f32 {
+        ($st:expr, $req:expr, $v:expr) => {
+            let ret = unsafe {
+                speex_preprocess_ctl(
+                    $st,
+                    $req as std::os::raw::c_int,
+                    &mut $v as *mut f32 as *mut c_void,
                 )
             };
             debug_assert!(ret == 0);
@@ -147,46 +134,62 @@ mod sys {
             };
         }
 
-        pub fn preprocess_ctl<T: Into<Variant>>(
-            &mut self,
-            request: SpeexPreprocessConst,
-            value: T,
-        ) -> Result<(), Error> {
-            let ptr_v = match (request, value.into()) {
-                (
-                    SpeexPreprocessConst::SPEEX_PREPROCESS_SET_DEREVERB_DECAY,
-                    Variant::F32(val),
-                )
-                | (
-                    SpeexPreprocessConst::SPEEX_PREPROCESS_SET_DEREVERB_LEVEL,
-                    Variant::F32(val),
-                ) => &val as *const f32 as *mut c_void,
-                (
-                    SpeexPreprocessConst::SPEEX_PREPROCESS_SET_ECHO_STATE,
-                    Variant::Echo(val),
-                ) => val.get_ptr() as *mut c_void,
-                (_, Variant::U32(val)) => &val as *const u32 as *mut c_void,
-                _ => panic!("This type is not accepted"),
-            };
-            let ret = unsafe {
-                speex_preprocess_ctl(self.st, request as i32, ptr_v) as usize
-            };
-            if ret != 0 {
-                Err(Error::UnknownRequest)
-            } else {
-                Ok(())
-            }
-        }
-
         pub fn set_denoise(&mut self, enable: bool) {
             let mut value = if enable { 1 } else { 0 };
-            speex_ctl_helper!(self.st, SPEEX_PREPROCESS_SET_DENOISE, value);
+            speex_ctl_helper_i32!(
+                self.st,
+                SPEEX_PREPROCESS_SET_DENOISE,
+                value
+            );
         }
 
         pub fn set_noise_suppress(&mut self, mut value: i32) {
-            speex_ctl_helper!(
+            speex_ctl_helper_i32!(
                 self.st,
                 SPEEX_PREPROCESS_SET_NOISE_SUPPRESS,
+                value
+            );
+        }
+
+        pub fn set_vad(&mut self, enable: bool) {
+            let mut value = if enable { 1 } else { 0 };
+            speex_ctl_helper_i32!(self.st, SPEEX_PREPROCESS_SET_VAD, value);
+        }
+
+        pub fn set_prob_start(&mut self, value: u32) {
+            speex_ctl_helper_i32!(
+                self.st,
+                SPEEX_PREPROCESS_SET_PROB_START,
+                value as i32
+            );
+        }
+
+        pub fn set_agc(&mut self, enable: bool) {
+            let mut value = if enable { 1 } else { 0 };
+            speex_ctl_helper_i32!(self.st, SPEEX_PREPROCESS_SET_AGC, value);
+        }
+
+        pub fn set_agc_target(&mut self, value: u32) {
+            speex_ctl_helper_i32!(
+                self.st,
+                SPEEX_PREPROCESS_SET_AGC_TARGET,
+                value as i32
+            );
+        }
+
+        pub fn set_dereverb(&mut self, enable: bool) {
+            let mut value = if enable { 1 } else { 0 };
+            speex_ctl_helper_i32!(
+                self.st,
+                SPEEX_PREPROCESS_SET_DEREVERB,
+                value
+            );
+        }
+
+        pub fn set_dereverb_level(&mut self, mut value: f32) {
+            speex_ctl_helper_f32!(
+                self.st,
+                SPEEX_PREPROCESS_SET_DEREVERB,
                 value
             );
         }
