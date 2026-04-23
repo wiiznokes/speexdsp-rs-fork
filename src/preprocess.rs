@@ -57,9 +57,9 @@ mod sys {
         /// Preprocess a frame.
         /// The buffer must be same size as specified in [`SpeexPreprocess::new`].
         ///
-        /// Return a bool value for voice activity (1 for speech, 0 for noise/silence), ONLY if VAD turned on.
-        pub fn preprocess_run(&mut self, x: &mut [i16]) -> usize {
-            unsafe { speex_preprocess_run(self.st, x.as_mut_ptr()) as usize }
+        /// Return a bool value for voice activity (true for speech, false for noise/silence), ONLY if VAD turned on.
+        pub fn preprocess_run(&mut self, x: &mut [i16]) -> bool {
+            unsafe { speex_preprocess_run(self.st, x.as_mut_ptr()) != 0 }
         }
 
         /// Update preprocessor state, but do not compute the output.
