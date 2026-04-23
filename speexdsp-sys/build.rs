@@ -85,6 +85,9 @@ fn main() {
         // most portable implementation
         cfg.define("USE_SMALLFT", None);
 
+        cfg.define("USE_SSE", None);
+        cfg.define("USE_SSE2", None);
+
         for path in &include_paths {
             cfg.include(path);
         }
